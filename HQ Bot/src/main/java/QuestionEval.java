@@ -30,6 +30,7 @@ public class QuestionEval {
 		List<AnswerEval> answerEvals = asyncEvaluateAll(q.getAnswers(), results.getItems());
 		TimeTracker.storeTime(TimeTracker.ansEval);
 		String bestAnswer = chooseBestAnswer(answerEvals, q.isOddOneOut());
+		System.out.println(bestAnswer);
 		TimeTracker.storeTime(TimeTracker.ansCompare);
 		return bestAnswer;
 	}

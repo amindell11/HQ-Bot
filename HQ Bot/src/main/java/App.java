@@ -31,7 +31,7 @@ public class App extends JFrame {
 	* 
 	*/
 	private static final long serialVersionUID = 1L;
-	public static boolean ENABLE_BOUNDS_EDIT = false;
+	public static boolean ENABLE_BOUNDS_EDIT = true;
 	public static void main(String[] args) throws Exception {
 		App p = new App();
 		p.loadBounding();
@@ -44,7 +44,7 @@ public class App extends JFrame {
 		p.setBackground(new Color(0, 0, 255, 0));
 		p.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		p.setVisible(true);
-		Main.getInstance().main(p);
+		new Thread(()->Main.getInstance().main(p)).start();
 	}
 
 	Rectangle bounds;

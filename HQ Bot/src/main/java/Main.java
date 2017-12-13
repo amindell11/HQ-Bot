@@ -10,6 +10,7 @@ import java.util.Date;
 import javax.imageio.ImageIO;
 import javax.swing.JDialog;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 public class Main {
 	public static final boolean SAVE_DATA = false;
@@ -21,6 +22,7 @@ public class Main {
 
 	private String directory;
 	private int fileIndex = 0;
+	boolean solved;
 
 	private Main() {
 		if (SAVE_DATA) {
@@ -34,24 +36,15 @@ public class Main {
 			synchronized (main) {
 				fileIndex++;
 				main.notifyAll();
-				try {
-					main.wait();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+				while (!solved) {
+					try {
+						main.wait();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
 				}
 			}
 		}));
-		new Thread(() -> {
-			try {
-				Thread.sleep(500);
-			} catch (Exception e) {
-			}
-
-			fileIndex++;
-			synchronized (main) {
-				main.notifyAll();
-			}
-		}).start();
 		solveOnInput(app);
 	}
 
@@ -66,10 +59,12 @@ public class Main {
 				}
 			}
 			try {
+				solved = false;
 				String ans;
 				ans = solveQuestion(app);
-				showAns(app, ans);
+				solved = true;
 				notifyAll();
+				showAns(app, ans);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -89,15 +84,17 @@ public class Main {
 		TimeTracker.storeTime(TimeTracker.ocr);
 		String ans = QuestionEval.getInstance().getAnswer(q);
 		TimeTracker.storeTime(TimeTracker.runTime);
-		System.out.println(TimeTracker.getTimeOutputs());
+		// System.out.println(TimeTracker.getTimeOutputs());
 		return ans;
 	}
 
 	private void showAns(App app, String ans) {
-		final JOptionPane pane = new JOptionPane(ans, JOptionPane.INFORMATION_MESSAGE);
-		final JDialog d = pane.createDialog("Result");
-		d.setLocation(app.bounds.x - app.bounds.width / 2, (int) (app.bounds.y + app.bounds.getHeight()));
-		d.setVisible(true);
+		SwingUtilities.invokeLater(() -> {
+			final JOptionPane pane = new JOptionPane(ans, JOptionPane.INFORMATION_MESSAGE);
+			final JDialog d = pane.createDialog("Result");
+			d.setLocation(app.bounds.x + -d.getWidth()/2 + app.bounds.width / 2, (int) (app.bounds.y + app.bounds.getHeight()));
+			d.setVisible(true);
+		});
 	}
 
 	private File getImageFile(int fileIndex) {

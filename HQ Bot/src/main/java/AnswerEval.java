@@ -75,7 +75,6 @@ public class AnswerEval implements Comparable<AnswerEval> {
 			streamOps.submit(() -> results.parallelStream().forEach(r -> {
 				String text = WebUtil.getSiteText(r.getLink());
 				text = text.substring(0, text.length() / 2);
-				text = text.substring(0, text.lastIndexOf(answer) + answer.length());
 				int s = StringUtils.countMatches(text, answer);
 				// System.out.println(answer + ": " + s + "\t" + r.getLink());
 				parsedScore += s;

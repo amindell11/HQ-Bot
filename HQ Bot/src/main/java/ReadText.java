@@ -19,7 +19,7 @@ public class ReadText {
 	public static Question detectText(String filePath, PrintStream out) throws Exception, IOException {
 		List<AnnotateImageRequest> requests = new ArrayList<>();
 
-		ByteString imgBytes = ByteString.readFrom(new FileInputStream("D:\\Question_1.jpg"));
+		ByteString imgBytes = ByteString.readFrom(new FileInputStream(filePath));
 
 		Image img = Image.newBuilder().setContent(imgBytes).build();
 		Feature feat = Feature.newBuilder().setType(Type.TEXT_DETECTION).build();
