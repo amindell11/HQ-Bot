@@ -74,31 +74,11 @@ public class AnswerEval implements Comparable<AnswerEval> {
 		try {
 			streamOps.submit(() -> results.parallelStream().forEach(r -> {
 				String text = WebUtil.getSiteText(r.getLink());
-				text = text.substring(0, text.length() / 2);
 				int s = StringUtils.countMatches(text, answer);
-				// System.out.println(answer + ": " + s + "\t" + r.getLink());
+				if(answer.equalsIgnoreCase("Harbor Wave")){System.out.println(answer + ": " + s + "\t" + r.getLink());}
 				parsedScore += s;
 			})).get();
 			// System.err.println("done parsing for \"" + answer + "\" : " + parsedScore);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			e.printStackTrace();
-		}
-		return parsedScore;
-	}
-
-	private Integer calcParsedScore2(String answer, List<Result> results) {
-		ForkJoinPool streamOps = new ForkJoinPool(3);
-		try {
-			streamOps.submit(() -> results.parallelStream().forEach(r -> {
-				String text = WebUtil.getSiteText(r.getLink());
-				text = text.substring(0, text.lastIndexOf(answer) + answer.length());
-				int s = StringUtils.countMatches(text, answer);
-				// System.out.println(answer + ": " + s + "\t" + r.getLink());
-				parsedScore += s;
-			})).get();
-			System.err.println("done parsing for \"" + answer + "\" : " + parsedScore);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		} catch (ExecutionException e) {

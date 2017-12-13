@@ -23,9 +23,9 @@ public class QuestionEval {
 	}
 
 	public String getAnswer(Question q) {
-		String searchQuery = simplifyQuestion(q);
+
 		TimeTracker.storeTime(TimeTracker.queryCondense);
-		Search results = runSearch(searchQuery);
+		Search results = WebUtil.runQuestionSearch(q);
 		TimeTracker.storeTime(TimeTracker.search);
 		List<AnswerEval> answerEvals = asyncEvaluateAll(q.getAnswers(), results.getItems());
 		TimeTracker.storeTime(TimeTracker.ansEval);
@@ -37,14 +37,6 @@ public class QuestionEval {
 
 	private String chooseBestAnswer(List<AnswerEval> answerEvals, boolean isOddOneOut) {
 		return (isOddOneOut ? Collections.min(answerEvals) : Collections.max(answerEvals)).getAnswer();
-	}
-
-	private String simplifyQuestion(Question q) {
-		return q.getQuestion().replace(" not", " ");
-	}
-
-	private Search runSearch(String searchQuery) {
-		return WebUtil.runSearch(searchQuery);
 	}
 
 	private List<AnswerEval> asyncEvaluateAll(String[] answers, List<Result> items) {
