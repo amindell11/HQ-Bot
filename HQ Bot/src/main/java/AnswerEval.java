@@ -1,5 +1,6 @@
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -23,39 +24,43 @@ public class AnswerEval implements Comparable<AnswerEval> {
 		this.answer = answer;
 	}
 
-	public static AnswerEval getEvaluate(String answer, List<Result> results, Duration timeout, Executor ex) {
-		List<Result> myResults = new ArrayList<>();
-		for (Result t : results) {
-			Result copy = t.clone();
-			myResults.add(copy);
-		}
-		AnswerEval eval = new AnswerEval(answer);
-		CompletableFuture<Void> parsedScore = CompletableFuture.runAsync(() -> eval.calcParsedScore(answer, myResults),
-				ex);
-		CompletableFuture<AnswerEval> combine = within(parsedScore.thenApply((Void v) -> eval), timeout);
-		combine.handle((ans, t) -> {
-			if (t != null) {
-				System.err.println("failed to complete all calculations in time!");
-			}
-			return eval;
-		});
-		try {
-			AnswerEval val = combine.get();
-			return val;
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			e.printStackTrace();
-		}
+	public static AnswerEval getEvaluate(Question q) {
+		new AnswerEval(q.getAnswers()[0]).byAnswerSearch(q, q.getAnswers()[0], q.getAnswerString(),
+				WebUtil.getInstance().runAnswerSearch(q));
+		System.out.println(parsedScore);
 		return null;
+		/*11
+		 * List<Result> myResults = new ArrayList<>(); for (Result t : results) { Result
+		 * copy = t.clone(); myResults.add(copy); } AnswerEval eval = new
+		 * AnswerEval(answer); CompletableFuture<Void> parsedScore =
+		 * CompletableFuture.runAsync(() -> eval.calcParsedScore(answer, myResults),
+		 * ex); CompletableFuture<AnswerEval> combine =
+		 * within(parsedScore.thenApply((Void v) -> eval), timeout);
+		 * combine.handle((ans, t) -> { if (t != null) {
+		 * System.err.println("failed to complete all calculations in time!"); } return
+		 * eval; }); try { AnswerEval val = combine.get(); return val; } catch
+		 * (InterruptedException e) { e.printStackTrace(); } catch (ExecutionException
+		 * e) { e.printStackTrace(); } return null;
+		 */
+	}
 
+	public static AnswerEval byQuestionSearch() {
+
+	}
+
+	public CompletableFuture<Void> byAnswerSearch(Question q, String ans, Result[] results, Duration timeout,
+			Executor ex) {
+		return CompletableFuture.allOf((CompletableFuture<?>[]) Arrays.stream(results).map((Result r) -> {
+			return CompletableFuture.runAsync(() -> parsedScore += StringSearch
+					.match(WebUtil.getInstance().getSiteText(r.getLink()), q.getQuestion().split(" ")), ex);
+		}).toArray());
 	}
 
 	private Integer calcParsedScore(String answer, List<Result> results) {
 		ForkJoinPool streamOps = new ForkJoinPool(3);
 		try {
 			streamOps.submit(() -> results.parallelStream().forEach(r -> {
-				String text = WebUtil.getSiteText(r.getLink());
+				String text = WebUtil.getInstance().getSiteText(r.getLink());
 				int s = StringUtils.countMatches(text, answer);
 				if (answer.equalsIgnoreCase("Harbor Wave")) {
 					System.out.println(answer + ": " + s + "\t" + r.getLink());

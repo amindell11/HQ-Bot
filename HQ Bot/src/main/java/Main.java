@@ -84,7 +84,7 @@ public class Main {
 		TimeTracker.storeTime(TimeTracker.ocr);
 		String ans = QuestionEval.getInstance().getAnswer(q);
 		TimeTracker.storeTime(TimeTracker.runTime);
-		// System.out.println(TimeTracker.getTimeOutputs());
+		System.out.println(TimeTracker.runTime);
 		return ans;
 	}
 

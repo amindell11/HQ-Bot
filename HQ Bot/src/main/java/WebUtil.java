@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import org.jsoup.Jsoup;
@@ -8,6 +9,7 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.customsearch.Customsearch;
+import com.google.api.services.customsearch.model.Result;
 import com.google.api.services.customsearch.model.Search;
 import com.google.cloud.language.v1.AnalyzeEntitiesRequest;
 import com.google.cloud.language.v1.AnalyzeEntitiesResponse;
@@ -20,24 +22,57 @@ public class WebUtil {
 	public static final String API_KEY = "AIzaSyBZVyVt1dxr0BvRp8AIHYK5H6WV_Dk4pSk";
 	public static final String CX = "002984914276044763183:lholwuagtcq";
 	public static final String APP_NAME = "HQBot";
+	public static final WebUtil INSTANCE = new WebUtil();
+
+	public static WebUtil getInstance() {
+		return INSTANCE;
+	}
+
+	private HttpTransport httpTransport;
+	private JsonFactory jsonFactory;
+	private Customsearch customsearch;
+	private org.jsoup.nodes.Document doc;
+	private LanguageServiceClient language;
+	private Document.Builder nlDocBuilder;
+	private AnalyzeEntitiesRequest.Builder request;
+
+	private WebUtil() {
+		httpTransport = new NetHttpTransport();
+		jsonFactory = new JacksonFactory();
+		customsearch = new Customsearch.Builder(httpTransport, jsonFactory, null).setApplicationName(APP_NAME).build();
+		request = AnalyzeEntitiesRequest.newBuilder().setEncodingType(EncodingType.UTF16);
+		nlDocBuilder = Document.newBuilder().setType(Type.PLAIN_TEXT);
+		try {
+			language = LanguageServiceClient.create();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public Result[][] runAnswerSearch(Question question) {
+		Result[][] results = new Result[3][1];
+		for (int x = 0; x < results.length; x++) {
+			results[x] = runSearch(question.getAnswers()[x], 3).getItems().toArray(new Result[0]);
+		}
+		return results;
+	}
 
 	/**
 	 * uses the question as the search query
 	 */
-	public static Search runQuestionSearch(Question question) {
+	public List<Result> runQuestionSearch(Question question) {
 		String query = simplifyQuestion(question);
-		HttpTransport httpTransport = new NetHttpTransport();
-		JsonFactory jsonFactory = new JacksonFactory();
-		Customsearch customsearch = new Customsearch.Builder(httpTransport, jsonFactory, null)
-				.setApplicationName(APP_NAME).build();
+		return runSearch(query, 9).getItems();
+	}
+
+	public Search runSearch(String query, long numResults) {
 		try {
-			System.out.println("bot"+query);
 			Customsearch.Cse.List list = customsearch.cse().list(query);
 			list.setKey(API_KEY);
 			list.setCx(CX);
 			list.setFilter("1");
+			list.setNum(numResults);
 			Search results = list.execute();
-			System.out.println(results.getQueries());
 			return results;
 		} catch (Exception e) {
 			System.err.println(e);
@@ -45,14 +80,12 @@ public class WebUtil {
 		return null;
 	}
 
-	public static String getSiteText(String url) {
-		org.jsoup.nodes.Document doc;
+	public String getSiteText(String url) {
 		try {
 			doc = Jsoup.connect(url).get();
 			String textContents = doc.body().text();
 			return textContents;
 		} catch (IOException e) {
-			// e.printStackTrace();
 		}
 		return "";
 	}
@@ -67,14 +100,12 @@ public class WebUtil {
 	/**
 	 * Identifies entities in the string {@code text}.
 	 */
-	public static Double getSalience(String text) throws Exception {
-		try (LanguageServiceClient language = LanguageServiceClient.create()) {
-			Document doc = Document.newBuilder().setContent(text).setType(Type.PLAIN_TEXT).build();
-			AnalyzeEntitiesRequest request = AnalyzeEntitiesRequest.newBuilder().setDocument(doc)
-					.setEncodingType(EncodingType.UTF16).build();
-			AnalyzeEntitiesResponse response = language.analyzeEntities(request);
-			return response.getEntitiesList().stream().map(e -> e.getSalience())
-					.collect(Collectors.averagingDouble(f -> (double) f));
-		}
+	public Double getSalience(String text) throws Exception {
+		Document doc = nlDocBuilder.setContent(text).build();
+		AnalyzeEntitiesRequest req = request.setDocument(doc).build();
+		AnalyzeEntitiesResponse response = language.analyzeEntities(req);
+		return response.getEntitiesList().stream().map(e -> e.getSalience())
+				.collect(Collectors.averagingDouble(f -> (double) f));
 	}
+
 }

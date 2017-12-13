@@ -30,9 +30,9 @@ public final class Question {
 
 	public double getSalienceConstant() {
 		try {
-			double salienceQ = WebUtil.getSalience(question);
+			double salienceQ = WebUtil.getInstance().getSalience(question);
 			double salienceA;
-			salienceA = WebUtil.getSalience(getAnswerString());
+			salienceA = WebUtil.getInstance().getSalience(getAnswerString());
 			return salienceQ / salienceA;
 		} catch (Exception e) {
 		}
