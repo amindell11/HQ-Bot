@@ -1,6 +1,7 @@
 
 public class StringSearch {
 	public static int match(String text, String... patterns) {
+		System.out.println(text);
 		int matches = 0;
 		for (int i = 0; i <= (text.length() - minLength(patterns)); i++) {
 			for (String p : patterns) {

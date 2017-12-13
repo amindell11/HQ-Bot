@@ -25,7 +25,7 @@ public class AnswerEval implements Comparable<AnswerEval> {
 	}
 
 	public AnswerEval getEvaluate(Question q, Result[][] allResults) {
-		new AnswerEval(q.getAnswers()[0]).byAnswerSearch(WebUtil.getInstance()., q.getAnswerString(),
+		new AnswerEval(q.getAnswers()[0]).byAnswerSearch(getKeyWords(q), q.getAnswerString(),
 				allResults[ArrayUtils.indexOf(q.getAnswers(), answer)], Executors.newCachedThreadPool());
 		System.out.println(parsedScore);
 		return null;
@@ -45,12 +45,24 @@ public class AnswerEval implements Comparable<AnswerEval> {
 		 */
 	}
 
+	public String[] getKeyWords(Question q) {
+		String qe = q.getQuestion();
+		qe = qe.replaceAll("(?i)not\\s", "");
+		qe = qe.replaceAll("\\b[\\w']{1,4}\\b", "");
+		qe = qe.replaceAll("\\s{2,}", " ");
+		qe = qe.replaceAll("\\.", "");
+		qe = qe.trim();
+		String[] split = qe.split(" ");
+		Arrays.stream(split).forEach(System.out::println);
+		return split;
+	}
+
 	public CompletableFuture<Void> byAnswerSearch(String[] searches, String ans, Result[] results, Executor ex) {
-		return CompletableFuture.allOf((CompletableFuture<?>[]) Arrays.stream(results).map((Result r) -> {
+		return CompletableFuture.allOf(Arrays.stream(results).map((Result r) -> {
 			return CompletableFuture.runAsync(
 					() -> parsedScore += StringSearch.match(WebUtil.getInstance().getSiteText(r.getLink()), searches),
 					ex);
-		}).toArray());
+		}).toArray(CompletableFuture[]::new));
 	}
 
 	private Integer calcParsedScore(String answer, List<Result> results) {

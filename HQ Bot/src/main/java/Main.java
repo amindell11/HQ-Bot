@@ -13,7 +13,7 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 public class Main {
-	public static final boolean SAVE_DATA = false;
+	public static final boolean SAVE_DATA = true;
 	private static final Main INSTANCE = new Main();
 
 	public static Main getInstance() {
@@ -26,6 +26,7 @@ public class Main {
 
 	private Main() {
 		if (SAVE_DATA) {
+			
 			directory = createSessionDirectory();
 		}
 	}
