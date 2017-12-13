@@ -12,7 +12,7 @@ import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 
 public class Main {
-	public static final boolean SAVE_DATA = true;
+	public static final boolean SAVE_DATA = false;
 	private static final Main INSTANCE = new Main();
 
 	public static Main getInstance() {
@@ -76,19 +76,20 @@ public class Main {
 		}
 	}
 
-	private String solveQuestion(App app) throws Exception {
-		long startTime = System.currentTimeMillis();
+	public static long startTime;
 
+	private String solveQuestion(App app) throws Exception {
+		TimeTracker.init();
 		Robot robot = new Robot();
 		String fileName = getImageFile(fileIndex).getPath();
 		Rectangle rectArea = app.bounds;
 		BufferedImage screenFullImage = robot.createScreenCapture(rectArea);
 		ImageIO.write(screenFullImage, "jpg", new File(fileName));
 		Question q = ReadText.detectText(fileName, System.out);
+		TimeTracker.storeTime(TimeTracker.ocr);
 		String ans = QuestionEval.getInstance().getAnswer(q);
-		long endTime   = System.currentTimeMillis();
-		long totalTime = endTime - startTime;
-		System.out.println("runtime: "+(double)totalTime/1000d);
+		TimeTracker.storeTime(TimeTracker.runTime);
+		System.out.println(TimeTracker.getTimeOutputs());
 		return ans;
 	}
 

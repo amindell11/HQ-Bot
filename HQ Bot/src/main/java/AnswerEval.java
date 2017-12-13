@@ -25,7 +25,6 @@ public class AnswerEval implements Comparable<AnswerEval> {
 
 	public static AnswerEval getEvaluate(String answer, List<Result> results, Duration timeout, Executor ex) {
 		List<Result> myResults = new ArrayList<>();
-
 		for (Result t : results) {
 			Result copy = t.clone();
 			myResults.add(copy);
@@ -45,13 +44,10 @@ public class AnswerEval implements Comparable<AnswerEval> {
 		});
 		try {
 			AnswerEval val = combine.get();
-			System.out.println(calcFuture.isDone());
 			return val;
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ExecutionException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;
@@ -63,12 +59,11 @@ public class AnswerEval implements Comparable<AnswerEval> {
 		try {
 			streamOps.submit(() -> results.parallelStream()
 					.forEach(r -> snippetScore += StringUtils.countMatches(r.getHtmlSnippet(), answer))).get();
-			System.err.println("done checking snippets for \"" + answer + "\" : " + snippetScore);
+			// System.err.println("done checking snippets for \"" + answer + "\" : " +
+			// snippetScore);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ExecutionException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return snippetScore;
@@ -79,17 +74,35 @@ public class AnswerEval implements Comparable<AnswerEval> {
 		try {
 			streamOps.submit(() -> results.parallelStream().forEach(r -> {
 				String text = WebUtil.getSiteText(r.getLink());
-				text = text.substring(0, text.lastIndexOf(answer)+answer.length());
+				text = text.substring(0, text.length() / 2);
+				text = text.substring(0, text.lastIndexOf(answer) + answer.length());
+				int s = StringUtils.countMatches(text, answer);
+				// System.out.println(answer + ": " + s + "\t" + r.getLink());
+				parsedScore += s;
+			})).get();
+			// System.err.println("done parsing for \"" + answer + "\" : " + parsedScore);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+		return parsedScore;
+	}
+
+	private Integer calcParsedScore2(String answer, List<Result> results) {
+		ForkJoinPool streamOps = new ForkJoinPool(3);
+		try {
+			streamOps.submit(() -> results.parallelStream().forEach(r -> {
+				String text = WebUtil.getSiteText(r.getLink());
+				text = text.substring(0, text.lastIndexOf(answer) + answer.length());
 				int s = StringUtils.countMatches(text, answer);
 				// System.out.println(answer + ": " + s + "\t" + r.getLink());
 				parsedScore += s;
 			})).get();
 			System.err.println("done parsing for \"" + answer + "\" : " + parsedScore);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ExecutionException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return parsedScore;
@@ -141,11 +154,5 @@ public class AnswerEval implements Comparable<AnswerEval> {
 
 	public int compareTo(AnswerEval eval) {
 		return (int) (this.getOverallScore() - eval.getOverallScore());
-	}
-
-	public static void main(String[] args) {
-		String text = "I love doing things that I love in the world of love and its sick";
-		text = text.substring(0, text.lastIndexOf("love")+"love".length());
-		System.out.println(text);
 	}
 }
