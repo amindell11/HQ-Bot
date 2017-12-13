@@ -78,7 +78,9 @@ public class AnswerEval implements Comparable<AnswerEval> {
 		ForkJoinPool streamOps = new ForkJoinPool(3);
 		try {
 			streamOps.submit(() -> results.parallelStream().forEach(r -> {
-				int s = StringUtils.countMatches(WebUtil.getSiteText(r.getLink()), answer);
+				String text = WebUtil.getSiteText(r.getLink());
+				text = text.substring(0, text.lastIndexOf(answer)+answer.length());
+				int s = StringUtils.countMatches(text, answer);
 				// System.out.println(answer + ": " + s + "\t" + r.getLink());
 				parsedScore += s;
 			})).get();
@@ -139,5 +141,11 @@ public class AnswerEval implements Comparable<AnswerEval> {
 
 	public int compareTo(AnswerEval eval) {
 		return (int) (this.getOverallScore() - eval.getOverallScore());
+	}
+
+	public static void main(String[] args) {
+		String text = "I love doing things that I love in the world of love and its sick";
+		text = text.substring(0, text.lastIndexOf("love")+"love".length());
+		System.out.println(text);
 	}
 }

@@ -31,14 +31,14 @@ public class App extends JFrame {
 	* 
 	*/
 	private static final long serialVersionUID = 1L;
-
+	public static boolean ENABLE_BOUNDS_EDIT = false;
 	public static void main(String[] args) throws Exception {
 		App p = new App();
 		p.loadBounding();
 		p.setUndecorated(true);
 		p.drawBoundScene();
-		if (p.bounds == null || JOptionPane.showOptionDialog(p, "adjust bounds?", "Bounds", JOptionPane.YES_NO_OPTION,
-				JOptionPane.QUESTION_MESSAGE, null, null, null) == JOptionPane.YES_OPTION) {
+		if (p.bounds == null || (ENABLE_BOUNDS_EDIT&&JOptionPane.showOptionDialog(p, "adjust bounds?", "Bounds", JOptionPane.YES_NO_OPTION,
+				JOptionPane.QUESTION_MESSAGE, null, null, null) == JOptionPane.YES_OPTION)) {
 			p.setBounds();
 		}
 		p.setBackground(new Color(0, 0, 255, 0));
