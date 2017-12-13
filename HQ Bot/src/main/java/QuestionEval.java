@@ -22,15 +22,13 @@ public class QuestionEval {
 		return INSTANCE;
 	}
 
-	public String getAnswer(Question q) {
-
-		TimeTracker.storeTime(TimeTracker.queryCondense);
+	public String getAnswer(Question q) {TimeTracker.storeTime(TimeTracker.queryCondense);
 		Search results = WebUtil.runQuestionSearch(q);
 		TimeTracker.storeTime(TimeTracker.search);
 		List<AnswerEval> answerEvals = asyncEvaluateAll(q.getAnswers(), results.getItems());
 		TimeTracker.storeTime(TimeTracker.ansEval);
 		String bestAnswer = chooseBestAnswer(answerEvals, q.isOddOneOut());
-		System.out.println(bestAnswer);
+		System.out.println("?"+bestAnswer);
 		TimeTracker.storeTime(TimeTracker.ansCompare);
 		return bestAnswer;
 	}

@@ -31,7 +31,7 @@ public class WebUtil {
 		Customsearch customsearch = new Customsearch.Builder(httpTransport, jsonFactory, null)
 				.setApplicationName(APP_NAME).build();
 		try {
-			System.out.println(query);
+			System.out.println("bot"+query);
 			Customsearch.Cse.List list = customsearch.cse().list(query);
 			list.setKey(API_KEY);
 			list.setCx(CX);
@@ -61,7 +61,7 @@ public class WebUtil {
 		String qe = q.getQuestion();
 		String delim = String.join("\" OR \"", q.getAnswers());
 		qe = qe.replaceAll("(?i)not\\s", "") + delim;
-		return null;
+		return qe;
 	}
 
 	/**

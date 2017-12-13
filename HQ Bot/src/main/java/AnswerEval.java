@@ -17,7 +17,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class AnswerEval implements Comparable<AnswerEval> {
 	private String answer;
-	private int parsedScore, snippetScore;
+	private int parsedScore;
 
 	public AnswerEval(String answer) {
 		this.answer = answer;
@@ -30,12 +30,9 @@ public class AnswerEval implements Comparable<AnswerEval> {
 			myResults.add(copy);
 		}
 		AnswerEval eval = new AnswerEval(answer);
-		CompletableFuture<Void> snippetScore = CompletableFuture
-				.runAsync(() -> eval.calcSnippetScore(answer, myResults), ex);
 		CompletableFuture<Void> parsedScore = CompletableFuture.runAsync(() -> eval.calcParsedScore(answer, myResults),
 				ex);
-		CompletableFuture<Void> calcFuture = CompletableFuture.allOf(snippetScore, parsedScore);
-		CompletableFuture<AnswerEval> combine = within(calcFuture.thenApply((Void v) -> eval), timeout);
+		CompletableFuture<AnswerEval> combine = within(parsedScore.thenApply((Void v) -> eval), timeout);
 		combine.handle((ans, t) -> {
 			if (t != null) {
 				System.err.println("failed to complete all calculations in time!");
@@ -54,28 +51,15 @@ public class AnswerEval implements Comparable<AnswerEval> {
 
 	}
 
-	private Integer calcSnippetScore(String answer, List<Result> results) {
-		ForkJoinPool streamOps = new ForkJoinPool(3);
-		try {
-			streamOps.submit(() -> results.parallelStream()
-					.forEach(r -> snippetScore += StringUtils.countMatches(r.getHtmlSnippet(), answer))).get();
-			// System.err.println("done checking snippets for \"" + answer + "\" : " +
-			// snippetScore);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			e.printStackTrace();
-		}
-		return snippetScore;
-	}
-
 	private Integer calcParsedScore(String answer, List<Result> results) {
 		ForkJoinPool streamOps = new ForkJoinPool(3);
 		try {
 			streamOps.submit(() -> results.parallelStream().forEach(r -> {
 				String text = WebUtil.getSiteText(r.getLink());
 				int s = StringUtils.countMatches(text, answer);
-				if(answer.equalsIgnoreCase("Harbor Wave")){System.out.println(answer + ": " + s + "\t" + r.getLink());}
+				if (answer.equalsIgnoreCase("Harbor Wave")) {
+					System.out.println(answer + ": " + s + "\t" + r.getLink());
+				}
 				parsedScore += s;
 			})).get();
 			// System.err.println("done parsing for \"" + answer + "\" : " + parsedScore);
@@ -111,27 +95,15 @@ public class AnswerEval implements Comparable<AnswerEval> {
 		this.parsedScore = parsedScore;
 	}
 
-	public int getSnippetScore() {
-		return snippetScore;
-	}
-
-	private void setSnippetScore(Integer snippetScore) {
-		this.snippetScore = snippetScore;
-	}
-
 	public String getAnswer() {
 		return answer;
 	}
 
 	public String toString() {
-		return answer + ": " + getParsedScore() + ", " + getSnippetScore();
-	}
-
-	public double getOverallScore() {
-		return getParsedScore() + getSnippetScore();
+		return answer + ": " + getParsedScore();
 	}
 
 	public int compareTo(AnswerEval eval) {
-		return (int) (this.getOverallScore() - eval.getOverallScore());
+		return (int) (this.getParsedScore() - eval.getParsedScore());
 	}
 }
