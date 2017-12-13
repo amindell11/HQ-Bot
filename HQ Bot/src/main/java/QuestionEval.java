@@ -1,15 +1,10 @@
-import java.time.Duration;
-import java.util.ArrayList;
+import static java.util.stream.Collectors.toList;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
 
 import com.google.api.services.customsearch.model.Result;
-import com.google.api.services.customsearch.model.Search;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class QuestionEval {
 	public static final double EVAL_TIME_LIMIT = 5;
@@ -23,11 +18,11 @@ public class QuestionEval {
 	}
 
 	public String getAnswer(Question q) {
-		
 		TimeTracker.storeTime(TimeTracker.queryCondense);
-		Search results = runSearch(searchQuery);
+		Result[][] results = WebUtil.getInstance().runAnswerSearch(q);
 		TimeTracker.storeTime(TimeTracker.search);
-		List<AnswerEval> answerEvals = asyncEvaluateAll(q.getAnswers(), results.getItems());
+		List<AnswerEval> answerEvals = Arrays.stream(q.getAnswers()).map(a -> new AnswerEval(a)).collect(toList());
+		answerEvals.parallelStream().forEach(a -> a.getEvaluate(q, results));
 		TimeTracker.storeTime(TimeTracker.ansEval);
 		String bestAnswer = chooseBestAnswer(answerEvals, q.isOddOneOut());
 		System.out.println(bestAnswer);
@@ -38,28 +33,4 @@ public class QuestionEval {
 	private String chooseBestAnswer(List<AnswerEval> answerEvals, boolean isOddOneOut) {
 		return (isOddOneOut ? Collections.min(answerEvals) : Collections.max(answerEvals)).getAnswer();
 	}
-
-	private String simplifyQuestion(Question q) {
-		return q.getQuestion().replace(" not", " ");
-	}
-
-
-	private List<AnswerEval> asyncEvaluateAll(String[] answers, List<Result> items) {
-		Executor ex = Executors.newCachedThreadPool(
-				new ThreadFactoryBuilder().setNameFormat("scoreCalcPool-%d").setPriority(Thread.MAX_PRIORITY).build());
-		try {
-			List<AnswerEval> evals = new ArrayList<>();
-			ForkJoinPool parallelAnswerEvals = new ForkJoinPool(3);
-			parallelAnswerEvals
-					.submit(() -> Arrays.stream(answers).parallel().forEach(
-							(String a) -> evals.add(AnswerEval.getEvaluate(a, items, Duration.ofMillis(500000), ex))))
-					.get();
-			System.out.println("evaluations: " + evals);
-			return evals;
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-
 }

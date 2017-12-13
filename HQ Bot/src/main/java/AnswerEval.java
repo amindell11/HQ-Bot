@@ -1,5 +1,4 @@
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -11,6 +10,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.google.api.services.customsearch.model.Result;
@@ -24,14 +24,15 @@ public class AnswerEval implements Comparable<AnswerEval> {
 		this.answer = answer;
 	}
 
-	public static AnswerEval getEvaluate(Question q) {
-		new AnswerEval(q.getAnswers()[0]).byAnswerSearch(q, q.getAnswers()[0], q.getAnswerString(),
-				WebUtil.getInstance().runAnswerSearch(q));
+	public AnswerEval getEvaluate(Question q, Result[][] allResults) {
+		new AnswerEval(q.getAnswers()[0]).byAnswerSearch(WebUtil.getInstance()., q.getAnswerString(),
+				allResults[ArrayUtils.indexOf(q.getAnswers(), answer)], Executors.newCachedThreadPool());
 		System.out.println(parsedScore);
 		return null;
-		/*11
-		 * List<Result> myResults = new ArrayList<>(); for (Result t : results) { Result
-		 * copy = t.clone(); myResults.add(copy); } AnswerEval eval = new
+
+		/*
+		 * 11 List<Result> myResults = new ArrayList<>(); for (Result t : results) {
+		 * Result copy = t.clone(); myResults.add(copy); } AnswerEval eval = new
 		 * AnswerEval(answer); CompletableFuture<Void> parsedScore =
 		 * CompletableFuture.runAsync(() -> eval.calcParsedScore(answer, myResults),
 		 * ex); CompletableFuture<AnswerEval> combine =
@@ -44,15 +45,11 @@ public class AnswerEval implements Comparable<AnswerEval> {
 		 */
 	}
 
-	public static AnswerEval byQuestionSearch() {
-
-	}
-
-	public CompletableFuture<Void> byAnswerSearch(Question q, String ans, Result[] results, Duration timeout,
-			Executor ex) {
+	public CompletableFuture<Void> byAnswerSearch(String[] searches, String ans, Result[] results, Executor ex) {
 		return CompletableFuture.allOf((CompletableFuture<?>[]) Arrays.stream(results).map((Result r) -> {
-			return CompletableFuture.runAsync(() -> parsedScore += StringSearch
-					.match(WebUtil.getInstance().getSiteText(r.getLink()), q.getQuestion().split(" ")), ex);
+			return CompletableFuture.runAsync(
+					() -> parsedScore += StringSearch.match(WebUtil.getInstance().getSiteText(r.getLink()), searches),
+					ex);
 		}).toArray());
 	}
 
