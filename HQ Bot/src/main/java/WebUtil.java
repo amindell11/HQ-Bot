@@ -31,13 +31,19 @@ public class WebUtil {
 		Customsearch customsearch = new Customsearch.Builder(httpTransport, jsonFactory, null)
 				.setApplicationName(APP_NAME).build();
 		try {
-			System.out.println("bot"+query);
 			Customsearch.Cse.List list = customsearch.cse().list(query);
 			list.setKey(API_KEY);
 			list.setCx(CX);
 			list.setFilter("1");
 			Search results = list.execute();
-			System.out.println(results.getQueries());
+			System.out.println(results.getSearchInformation().getTotalResults());
+			if (results.getSearchInformation().getTotalResults() < 600) {
+				list = customsearch.cse().list(query + " " + String.join("\" OR \"", question.getAnswers()) + "\"");
+				list.setKey(API_KEY);
+				list.setCx(CX);
+				list.setFilter("1");
+			}
+			;
 			return results;
 		} catch (Exception e) {
 			System.err.println(e);
@@ -59,8 +65,12 @@ public class WebUtil {
 
 	private static String simplifyQuestion(Question q) {
 		String qe = q.getQuestion();
-		String delim = String.join("\" OR \"", q.getAnswers());
-		qe = qe.replaceAll("(?i)not\\s", "") + delim;
+		qe = qe.replaceAll("(?i)not\\s", "");
+		qe = qe.replaceAll("\\b[\\w']{1,4}\\b", "");
+		qe = qe.replaceAll("\\s{2,}", " ");
+		qe = qe.replaceAll("\\.", " ");
+		qe = qe.trim().replaceAll(" ", " AND ");
+		System.out.println(qe);
 		return qe;
 	}
 

@@ -1,31 +1,39 @@
+import java.text.DecimalFormat;
 import java.util.Arrays;
 
 public enum TimeTracker {
 	startTime, ocr, queryCondense, search, ansEval, ansCompare, runTime;
-	public double timeStamp;
+	public long timeStamp;
 
 	public static void init() {
-		startTime.timeStamp = getTimeSeconds();
+		startTime.timeStamp = System.currentTimeMillis();
 	}
 
 	public static void storeTime(TimeTracker waypoint) {
-		waypoint.timeStamp = getTimeSeconds() - startTime.timeStamp;
+		waypoint.timeStamp = getTimestamp();
 	}
 
-	private static double getTimeSeconds() {
-		return .01d * Math.round(System.currentTimeMillis() / 10d);
+	public static float getTimeSeconds(long millis) {
+		return millis / 1000F;
 	}
 
-	public double getTimestamp() {
-		return timeStamp - startTime.timeStamp;
+	public float getTime() {
+		return getTimeSeconds(timeStamp);
 	}
 
-	public static double getTimeDiff(TimeTracker val1, TimeTracker val2) {
-		return val2.timeStamp - val1.timeStamp;
+	public static long getTimestamp() {
+		return System.currentTimeMillis() - startTime.timeStamp;
+	}
+
+	public float since(TimeTracker val2) {
+		return getTime() - val2.getTime();
+	}
+
+	public String toString() {
+		return new DecimalFormat("##.00").format(getTime());
 	}
 
 	public static String getTimeOutputs() {
-		return Arrays.stream(TimeTracker.values())
-				.map(v -> v.name() + "\t" + v.timeStamp + "\t" + v.getTimestamp() + "\n").reduce("", (a, b) -> a + b);
+		return Arrays.stream(TimeTracker.values()).map(v -> v.name() + "\t" + v).reduce("", (a, b) -> a + b);
 	}
 }
